@@ -6,6 +6,7 @@ import Customize from './pages/Customize'
 import { useContext } from 'react'
 import { userDataContext } from './context/userContext'
 import Home from './pages/Home'
+import Customize2 from './pages/Customize2'
 
 const App = () => {
   const {userData, setUserData}=useContext(userDataContext);
@@ -15,6 +16,7 @@ const App = () => {
       <Route path='/signup' element={!userData?<SignUp/>:<Navigate to={"/"}/>}/>
       <Route path='/signin' element={!userData?<SignIn/>:<Navigate to={"/"}/>}/>
       <Route path='/customize' element={userData?<Customize/>:<Navigate to={"/signin"}/>}/>
+      <Route path='/customize2' element={userData?<Customize2/>:<Navigate to={"/signin"}/>}/>
     </Routes>
   )
 }
