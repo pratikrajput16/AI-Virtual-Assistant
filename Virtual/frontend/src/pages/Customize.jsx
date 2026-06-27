@@ -7,6 +7,9 @@ import image7 from "../assets/image7.jpeg";
 import { RiImageAddLine } from "react-icons/ri";
 import { userDataContext } from "../context/userContext";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios'
+
+import { MdKeyboardBackspace } from "react-icons/md"
 
 const Customize = () => {
   const {
@@ -32,6 +35,7 @@ const Customize = () => {
   };
   return (
     <div className="w-full h-screen bg-linear-to-t from-[black] to-[#030353] flex justify-center items-center flex-col p-5">
+      <MdKeyboardBackspace className="cursor-pointer absolute top-7.5 left-7.5 text-white w-6.25 h-6.25" onClick={()=>navigate("/")}/>
       <h1 className="text-white text-[30px] mb-7.5 text-center">
         Select your <span className="text-blue-200">Assistant Image</span>
       </h1>
