@@ -1,4 +1,8 @@
+import { response } from "express";
+import geminiResponse from "../gemini.js";
 import User from "../models/user.model.js";
+
+import moment from "moment";
 export const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
@@ -36,4 +40,51 @@ export const updateAssistant = async (req, res) => {
   } catch (error) {
     return res.status(400).json({ message: "updateAssistantError user error" });
   }
+};
+
+export const askToAssistant = async (req, res) => {
+  try {
+    const { command } = req.body;
+    const user = await User.findById(req.userId);
+    const userName = user.name;
+    const assistantName = user.assistantName;
+    const result = await geminiResponse(command, userName, assistantName);
+
+    const jsonMatch = result.match(/{[\s\S]*}/);
+    if (!jsonMatch) {
+      return res.status(400).json({ response: "Sorry, I can't understand" });
+    }
+    const gemResult = JSON.parse(jsonMatch[0]);
+    const type = gemResult.type;
+
+    switch (type) {
+      case "get-date":
+        return res.json({
+          type,
+          userInput: gemResult.userInput,
+          response: `Current date is ${moment().format("YYYY-MM-DD")}`,
+        });
+
+      case "get-time":
+        return res.json({
+          type,
+          userInput: gemResult.userInput,
+          response: `Current time is ${moment().format("hh:mm A")}`,
+        });
+
+      case "get-day":
+        return res.json({
+          type,
+          userInput: gemResult.userInput,
+          response: `Today is ${moment().format("dddd")}`,
+        });
+
+      case "get-month":
+        return res.json({
+          type,
+          userInput: gemResult.userInput,
+          response: `Today is ${moment().format("MMMM")}`,
+        });
+    }
+  } catch (error) {}
 };
