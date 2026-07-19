@@ -85,6 +85,28 @@ export const askToAssistant = async (req, res) => {
           userInput: gemResult.userInput,
           response: `Today is ${moment().format("MMMM")}`,
         });
+      case "google_search":
+      case "youtube_search":
+      case "youtube_play":
+      case "general":
+      case "calculator_open":
+      case "instagram_open":
+      case "facebook_open":
+      case "weather-show":
+        return res.json({
+          type,
+          userInput: gemResult.userInput,
+          response: gemResult.response,
+        });
+
+      default:
+        return res.status(400).json({
+          response: "I didn't understand the command",
+        });
     }
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({
+      response: "Ask assistant error",
+    });
+  }
 };

@@ -18,6 +18,8 @@ const Home = () => {
     }
   };
 
+  
+
   return (
     <div className="w-full h-screen bg-linear-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-3.75">
       <button
