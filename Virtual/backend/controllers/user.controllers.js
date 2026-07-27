@@ -85,13 +85,13 @@ export const askToAssistant = async (req, res) => {
           userInput: gemResult.userInput,
           response: `Today is ${moment().format("MMMM")}`,
         });
-      case "google_search":
-      case "youtube_search":
-      case "youtube_play":
+      case "google-search":
+      case "youtube-search":
+      case "youtube-play":
       case "general":
-      case "calculator_open":
-      case "instagram_open":
-      case "facebook_open":
+      case "calculator-open":
+      case "instagram-open":
+      case "facebook-open":
       case "weather-show":
         return res.json({
           type,

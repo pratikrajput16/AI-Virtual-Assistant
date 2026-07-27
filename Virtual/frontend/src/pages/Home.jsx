@@ -1,10 +1,14 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const { userData, serverUrl, setUserData, getGeminiResponse } =
     useContext(userDataContext);
   const navigate = useNavigate();
+  const [listening, setListening] = useState(false);
+  const isSpeakingRef = useRef(false);
+  const recognitionRef = useRef(null);
+  const synth = window.SpeechSynthesis;
 
   const handleLogout = async () => {
     try {
@@ -19,12 +23,103 @@ const Home = () => {
     }
   };
 
+  const speak = (text) => {
+    const utterence = new SpeechSynthesisUtterance(text);
+    isSpeakingRef.current = true;
+    utterence.onend = () => {
+      isSpeakingRef.current = false;
+      recognitionRef.current?.start();
+    };
+    synth.speak(utterence);
+  };
+
+  const handleCommand = (data) => {
+    const { type, userInput, response } = data;
+    speak(response);
+
+    if (type === "google-search") {
+      const query = encodeURIComponent(userInput);
+      window.open(`https://www.google.com/search?q=${query}`, "_blank");
+    }
+
+    if (type === "calculator-open") {
+      window.open(`https://www.google.com/search?q=calculator`, "_blank");
+    }
+
+    if (type === "instagram-open") {
+      window.open(`https://www.instagram.com/`, "_blank");
+    }
+
+    if (type === "facebook-open") {
+      window.open(`https://www.facebook.com/`, "_blank");
+    }
+
+    if (type === "weather-show") {
+      window.open(`https://www.google.com/search?q=weather`, "_blank");
+    }
+
+    if (type === "youtube-search" || type === "youtube-play") {
+      const query = encodeURIComponent(userInput);
+      window.open(
+        `https://www.youtube.com/results?search_query=${query}`,
+        "_blank",
+      );
+    }
+  };
+
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     const recognition = new SpeechRecognition();
     ((recognition.continous = true), (recognition.lang = "en-US"));
+
+    recognitionRef.current = recognition;
+
+    const isRecognizingRef = { current: false };
+
+    const safeRecognition = () => {
+      if (!isSpeakingRef && !isRecognizingRef) {
+        try {
+          recognition.start();
+          console.log("Recognition requested to start");
+        } catch (error) {
+          if (error.name !== "InvalidStateError") {
+            console.error("Start error:", err);
+          }
+        }
+      }
+    };
+
+    recognition.onstart = () => {
+      console.log("Recognition started");
+      isRecognizingRef.current = true;
+      setListening(true);
+    };
+
+    recognition.onend = () => {
+      console.log("Recognition ended");
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      if (!isSpeakingRef.current) {
+        setTimeout(() => {
+          safeRecognition();
+        }, 1000);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn("Recognition error:", event.error);
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      if (event.error !== "aborted" && !isSpeakingRef.current) {
+        setTimeout(() => {
+          safeRecognition();
+        }, 1000);
+      }
+    };
 
     recognition.onresult = async (e) => {
       const trasnscript = e.results[e.results.length - 1][0].trasnscript.trim();
@@ -34,12 +129,22 @@ const Home = () => {
         trasnscript.toLowerCase().includes(userData.assistantName.toLowerCase())
       ) {
         const data = await getGeminiResponse(trasnscript);
-        console.log(data);
+
+        handleCommand(data);
       }
     };
-
-    recognition.start();
-  });
+    const fallback = setInterval(() => {
+      if (!isSpeakingRef && !isRecognizingRef) {
+        safeRecognition();
+      }
+    }, 10000);
+    return () => {
+      recognition.stop();
+      setListening(false);
+      isRecognizingRef.current = false;
+      clearInterval(fallback);
+    };
+  }, []);
 
   return (
     <div className="w-full h-screen bg-linear-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-3.75">
