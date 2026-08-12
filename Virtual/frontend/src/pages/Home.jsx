@@ -23,12 +23,31 @@ const Home = () => {
     }
   };
 
+  const startRecognition = () => {
+    try {
+      recognitionRef.current?.start();
+      setListening(true);
+    } catch (error) {
+      if (!error.message.includes("start")) {
+        console.log("Recognition error:", error);
+      }
+    }
+  };
+
   const speak = (text) => {
     const utterence = new SpeechSynthesisUtterance(text);
+
+    utterence.lang = "hi-IN";
+    const voices=window.speechSynthesis.getVoices()
+    const hindiVoice = voices.find((v) => v.lang === "hi-IN");
+    if (hindiVoice) {
+      utterence.voice = hindiVoice;
+    }
+
     isSpeakingRef.current = true;
     utterence.onend = () => {
       isSpeakingRef.current = false;
-      recognitionRef.current?.start();
+      startRecognition();
     };
     synth.speak(utterence);
   };
@@ -79,7 +98,7 @@ const Home = () => {
     const isRecognizingRef = { current: false };
 
     const safeRecognition = () => {
-      if (!isSpeakingRef && !isRecognizingRef) {
+      if (!isSpeakingRef.current && !isRecognizingRef.current) {
         try {
           recognition.start();
           console.log("Recognition requested to start");
@@ -128,16 +147,20 @@ const Home = () => {
       if (
         trasnscript.toLowerCase().includes(userData.assistantName.toLowerCase())
       ) {
+        recognition.stop();
+        isRecognizingRef.current = false;
+        setListening(false);
         const data = await getGeminiResponse(trasnscript);
 
         handleCommand(data);
       }
     };
     const fallback = setInterval(() => {
-      if (!isSpeakingRef && !isRecognizingRef) {
+      if (!isSpeakingRef.current && !isRecognizingRef.current) {
         safeRecognition();
       }
     }, 10000);
+    safeRecognition();
     return () => {
       recognition.stop();
       setListening(false);
