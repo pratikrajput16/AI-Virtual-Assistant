@@ -5,9 +5,15 @@ const Home = () => {
   const { userData, serverUrl, setUserData, getGeminiResponse } =
     useContext(userDataContext);
   const navigate = useNavigate();
+  import { CgMenuRight } from "react-icons/cg";
+  import aiImg from "../assets/ai.gif";
+  import userImg from "../assets/user.gif";
   const [listening, setListening] = useState(false);
+  const [userText, setUserText] = useState("");
+  const [aiText, setAiText] = useState("");
   const isSpeakingRef = useRef(false);
   const recognitionRef = useRef(null);
+  const isRecognizingRef = useRef(false);
   const synth = window.SpeechSynthesis;
 
   const handleLogout = async () => {
@@ -38,7 +44,7 @@ const Home = () => {
     const utterence = new SpeechSynthesisUtterance(text);
 
     utterence.lang = "hi-IN";
-    const voices=window.speechSynthesis.getVoices()
+    const voices = window.speechSynthesis.getVoices();
     const hindiVoice = voices.find((v) => v.lang === "hi-IN");
     if (hindiVoice) {
       utterence.voice = hindiVoice;
@@ -46,6 +52,7 @@ const Home = () => {
 
     isSpeakingRef.current = true;
     utterence.onend = () => {
+      setAiText("");
       isSpeakingRef.current = false;
       startRecognition();
     };
@@ -94,8 +101,6 @@ const Home = () => {
     ((recognition.continous = true), (recognition.lang = "en-US"));
 
     recognitionRef.current = recognition;
-
-    const isRecognizingRef = { current: false };
 
     const safeRecognition = () => {
       if (!isSpeakingRef.current && !isRecognizingRef.current) {
@@ -147,12 +152,16 @@ const Home = () => {
       if (
         trasnscript.toLowerCase().includes(userData.assistantName.toLowerCase())
       ) {
+        setAiText("");
+        setUserText(trasnscript);
         recognition.stop();
         isRecognizingRef.current = false;
         setListening(false);
         const data = await getGeminiResponse(trasnscript);
 
         handleCommand(data);
+        setAiText(data.response);
+        setUserText("");
       }
     };
     const fallback = setInterval(() => {
@@ -171,14 +180,15 @@ const Home = () => {
 
   return (
     <div className="w-full h-screen bg-linear-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-3.75">
+      <CgMenuRight className="lg:hidden text-white absolute top-5 right-5 w-6.25 h-6.25"/>
       <button
-        className="min-w-37.5 h-15 mt-7.5 text-black font-semibold bg-white rounded-full text-[19px] absolute top-5 right-5 cursor-pointer"
+        className="min-w-37.5 h-15 mt-7.5 text-black font-semibold bg-white rounded-full text-[19px] absolute top-5 right-5 cursor-pointer hidden lg:block"
         onClick={handleLogout}
       >
         Log Out
       </button>
       <button
-        className="min-w-37.5 h-15 mt-7.5 text-black font-semibold bg-white rounded-full text-[19px] absolute top-25 right-5 px-5 py-2.5 cursor-pointer"
+        className="min-w-37.5 h-15 mt-7.5 text-black font-semibold bg-white rounded-full text-[19px] absolute top-25 right-5 px-5 py-2.5 cursor-pointer hidden lg:block"
         onClick={() => navigate("/customize")}
       >
         Customize your Assistant
@@ -193,6 +203,11 @@ const Home = () => {
       </div>
       <h1 className="text-white text-4.5 font-semibold">
         I'm {userData?.assistantName}
+      </h1>
+      {!aiText && <img src={userImg} alt="" className="w-50" />}
+      {aiText && <img src={aiImg} alt="" className="w-50" />}
+      <h1 className="text-white text-4.5 font-semibold text-wrap">
+        {userText ? userText : aiText ? aiText : null}
       </h1>
     </div>
   );
